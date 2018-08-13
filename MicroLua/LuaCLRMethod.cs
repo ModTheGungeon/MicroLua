@@ -2,31 +2,7 @@
 using System.Reflection;
 
 namespace MicroLua {
-    public class MethodWrapper {
-        public MethodInfo Method { get; private set; }
-        public bool IsDelegate { get; private set; } = false;
-        public bool IsStatic { get; private set; } = false;
-
-        public MethodWrapper(MethodInfo method, object target, bool @static = false) {
-            Method = method;
-            IsDelegate = false;
-            IsStatic = @static;
-        }
-
-        public MethodWrapper(Delegate deleg, bool @static = false) {
-            Method = deleg.Method;
-            IsDelegate = true;
-            IsStatic = @static;
-        }
-
-        public object Invoke(object target, params object[] @params) {
-            try {
-                return Method.Invoke(target, @params);
-            } catch (TargetInvocationException) {
-                throw;
-            }
-        }
-    }
+    public delegate object LuaCLRFunction(LuaState state);
 
     public class LuaCLRMethodInfo {
         public Type Type { get; private set; }

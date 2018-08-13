@@ -160,30 +160,30 @@ namespace MicroLua.Tests {
             using (var lua = new LuaState()) {
                 lua.EnterArea();
                 lua.Push("Hello, world!");
-                int refidx = lua.MakeReference();
+                int refidx = lua.MakeLuaReference();
                 lua.Pop();
                 lua.LeaveArea();
 
                 lua.EnterArea();
-                lua.PushReference(refidx);
+                lua.PushLuaReference(refidx);
                 var value = lua.ToString();
                 Assert.AreEqual("Hello, world!", value);
                 lua.Pop();
-                lua.DeleteReference(refidx);
+                lua.DeleteLuaReference(refidx);
                 lua.LeaveArea();
 
                 lua.EnterArea();
                 lua.Push("Reuse");
-                refidx = lua.MakeReference();
+                refidx = lua.MakeLuaReference();
                 lua.Pop();
                 lua.LeaveArea();
 
                 lua.EnterArea();
-                lua.PushReference(refidx);
+                lua.PushLuaReference(refidx);
                 value = lua.ToString();
                 Assert.AreEqual("Reuse", value);
                 lua.Pop();
-                lua.DeleteReference(refidx);
+                lua.DeleteLuaReference(refidx);
                 lua.LeaveArea();
             }
         }
@@ -233,7 +233,7 @@ namespace MicroLua.Tests {
         public void LuaCLRMethods() {
             using (var lua = new LuaState()) {
                 lua.EnterArea();
-                lua.PushCLRMethod(
+                lua.PushLuaCLRMethod(
                     typeof(Helper),
                     "Test",
                     BindingFlags.Static | BindingFlags.Public
@@ -254,7 +254,7 @@ namespace MicroLua.Tests {
                 lua.LeaveArea();
 
                 lua.EnterArea();
-                lua.PushCLRMethod(
+                lua.PushLuaCLRMethod(
                     typeof(Helper),
                     "Test",
                     BindingFlags.Instance | BindingFlags.Public,
@@ -269,7 +269,7 @@ namespace MicroLua.Tests {
                 lua.LeaveArea();
 
                 lua.EnterArea();
-                lua.PushCLRMethod(
+                lua.PushLuaCLRMethod(
                     typeof(Helper),
                     "TestCLR",
                     BindingFlags.Instance | BindingFlags.Public,
@@ -289,7 +289,7 @@ namespace MicroLua.Tests {
         public void LuaCLRMethodOverloads() {
             using (var lua = new LuaState()) {
                 lua.EnterArea();
-                lua.PushCLRMethod(
+                lua.PushLuaCLRMethod(
                     typeof(Helper),
                     "Overload",
                     BindingFlags.Static | BindingFlags.Public
@@ -324,6 +324,7 @@ namespace MicroLua.Tests {
                 var test_field = lua.ToCLR();
                 Assert.AreEqual(helper.TestField, test_field);
                 lua.Pop();
+
 
                 lua.LoadString("return test.TestProp");
                 lua.ProtCall(0);
@@ -370,10 +371,140 @@ namespace MicroLua.Tests {
                 lua.LoadString("test:CauseException()");
                 if (lua.VoidProtCall(0) != LuaResult.OK) {
                     var top = lua.StackTop;
-                    var error = lua.ToCLR();
-                    Console.WriteLine(error);
+                    var error = lua.ToCLR() as Exception;
+                    Assert.NotNull(error);
+                    Assert.IsInstanceOf(typeof(TargetInvocationException), error);
+                    Assert.NotNull(error.InnerException);
+                    Assert.IsInstanceOf(typeof(InvalidOperationException), error.InnerException);
+                    Assert.AreEqual("Hello", error.InnerException.Message);
                     lua.Pop();
                 }
+                lua.LeaveArea();
+            }
+        }
+
+        // This is a LuaCLRFunction
+        // It allows you to interact with the stack directly
+        // similarly to lua_CFunction, *but* it comes with
+        // built in proper error handling (which means you
+        // can safely throw inside here)
+        public static object TestFunction(LuaState lua) {
+            lua.CheckArg(LuaType.String, 1);
+            lua.CheckArg(LuaType.Number, 2);
+            lua.CheckArg(LuaType.Boolean, 3);
+
+            var arg1 = lua.ToString(1);
+            var arg2 = lua.ToLong(2);
+            var arg3 = lua.ToBool(3);
+
+            if (arg1 != "hello" || arg2 != 1000 || arg3 != false) {
+                throw new InvalidOperationException("Wrong password!");
+            }
+
+            return "Hello, world!";
+        }
+
+        [Test]
+        public void LuaCLRFunctionUsage() {
+            using (var lua = new LuaState()) {
+                lua.EnterArea();
+
+                lua.PushLuaCLRFunction(TestFunction);
+                lua.SetGlobal("test");
+
+                lua.LoadString("return test('not hello', 0, true)");
+                if (lua.ProtCall(0) != LuaResult.OK) {
+                    var ex = lua.ToCLR<Exception>();
+                    lua.Pop();
+                    Assert.NotNull(ex);
+                    Assert.IsInstanceOf(typeof(InvalidOperationException), ex);
+                    Assert.AreEqual("Wrong password!", ex.Message);
+                }
+
+                lua.LoadString("return test('hello', 1000, false)");
+                if (lua.ProtCall(0) != LuaResult.OK) {
+                    Assert.Fail(lua.ToCLR().ToString());
+                    // no need to pop error becuase we fail the test anyway
+                    // in real code you should, though, because you're
+                    // probably not going to terminate the whole program
+                    // in the case of a lua error
+                }
+
+                var obj = lua.ToCLR();
+                lua.Pop();
+
+                Assert.AreEqual("Hello, world!", obj);
+
+                lua.LeaveArea();
+            }
+        }
+
+        [Test]
+        public void CLRLibrary() {
+            using (var lua = new LuaState()) {
+                lua.EnterArea();
+                lua.LoadInteropLibrary();
+
+                lua.LoadString("return interop.assembly('MicroLua.Tests')");
+                if (lua.ProtCall(0) != LuaResult.OK) {
+                    Assert.Fail(lua.ToCLR().ToString());
+                }
+                var ass = lua.ToCLR<Assembly>();
+                lua.Pop();
+
+                Assert.AreEqual(Assembly.Load("MicroLua.Tests"), ass);
+                lua.Push(ass);
+                lua.SetGlobal("microlua_tests");
+
+                lua.LoadString("return interop.type(microlua_tests, 'MicroLua.Tests.Helper')");
+                if (lua.ProtCall(0) != LuaResult.OK) {
+                    Assert.Fail(lua.ToCLR().ToString());
+                }
+                var type = lua.ToCLR<Type>();
+                lua.Pop();
+
+                Assert.AreEqual(typeof(Helper), type);
+
+                lua.LeaveArea();
+            }
+        }
+
+        [Test]
+        public void Traceback() {
+            using (var lua = new LuaState()) {
+                lua.EnterArea();
+
+                var helper = new Helper();
+                lua.PushCLR(helper);
+                lua.SetGlobal("test");
+
+                lua.BeginProtCall();
+                lua.BeginProtCall();
+                lua.LoadString(@"
+                    function testf()
+                        test:CauseException()
+                    end
+                    return testf
+                ");
+                lua.ExecProtCall(0);
+                if (lua.ExecProtCall(0) != LuaResult.OK) {
+                    var ex = lua.ToCLR() as LuaException;
+                    lua.Pop();
+
+                    Assert.NotNull(ex);
+                    Assert.NotNull(ex.InnerException);
+                    Assert.NotNull(ex.InnerException.InnerException);
+                    Assert.IsInstanceOf(typeof(TargetInvocationException), ex.InnerException);
+                    Assert.IsInstanceOf(typeof(InvalidOperationException), ex.InnerException.InnerException);
+                    Assert.AreEqual("Hello", ex.InnerException.InnerException.Message);
+
+                    Assert.AreEqual("[C]: ?", ex.TracebackArray[0]);
+                    Assert.AreEqual("[C]: in function '_error'", ex.TracebackArray[1]);
+                    Assert.AreEqual("[string \"MicroLua\"]:25: in function <[string \"MicroLua\"]:21>", ex.TracebackArray[2]);
+                    Assert.AreEqual("(tail call): ?", ex.TracebackArray[3]);
+                    Assert.AreEqual("[string \"...\"]:3: in function <[string \"...\"]:2>", ex.TracebackArray[4]);
+                }
+
                 lua.LeaveArea();
             }
         }

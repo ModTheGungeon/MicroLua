@@ -32,19 +32,33 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MicroLua.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Errors.cs" />
     <Compile Include="LuaBinding.cs" />
     <Compile Include="RefTable.cs" />
     <Compile Include="Lua.cs" />
-    <Compile Include="CLR.cs" />
-    <Compile Include="Conversions.cs" />
+    <Compile Include="LuaCLRMethod.cs" />
+    <Compile Include="LuaState\LuaState.cs" />
+    <Compile Include="LuaState\CLRInvokes.cs" />
+    <Compile Include="LuaState\ScriptLoading.cs" />
+    <Compile Include="LuaState\StackOperations.cs" />
+    <Compile Include="LuaState\StackSafety.cs" />
+    <Compile Include="LuaState\StackRetrieval.cs" />
+    <Compile Include="LuaState\LuaCLRBridging.cs" />
+    <Compile Include="LuaState\TableOperations.cs" />
+    <Compile Include="LuaState\References.cs" />
+    <Compile Include="LuaState\GCOperations.cs" />
+    <Compile Include="LuaState\FunctionCalling.cs" />
+    <Compile Include="LuaState\InteropLibrary.cs" />
+    <Compile Include="LuaState\LuaCLRConversions.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ErrorMechanism.lua">
       <LogicalName>ErrorMechanism.lua</LogicalName>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="LuaState\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

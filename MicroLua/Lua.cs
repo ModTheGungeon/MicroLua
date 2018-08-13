@@ -286,6 +286,12 @@ namespace MicroLua {
         [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
         public static extern int lua_setmetatable(IntPtr L, int index);
 
+        [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
+        public static extern bool lua_rawequal(IntPtr L, int index1, int index2);
+
+        [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
+        public static extern void lua_remove(IntPtr L, int index);
+
         public static int lua_dostring(IntPtr L, string str) {
             if (luaL_loadstring(L, str) == LuaResult.OK) {
                 lua_pcall(L, 0, LUA_MULTRET, 0);
