@@ -6,6 +6,16 @@ namespace MicroLua.Tests {
     public class Helper {
         public static Helper Instance = new Helper();
 
+        public Helper() {}
+
+        public Helper(string a) {
+            TestField = a;
+        }
+
+        public Helper(int b) {
+            TestField = b.ToString();
+        }
+
         public static int Test() {
             return 42;
         }
@@ -576,6 +586,18 @@ namespace MicroLua.Tests {
                 lua.LoadString("Helper.StaticTestProp = 'hacked'");
                 lua.VoidProtCall(0);
                 Assert.AreEqual("hacked", Helper.StaticTestProp);
+
+                lua.LoadString("return Helper('ctor').TestField");
+                lua.ProtCall(0);
+                var val = lua.ToCLR();
+                Assert.AreEqual("ctor", val);
+                lua.Pop();
+
+                lua.LoadString("return Helper(42).TestField");
+                lua.ProtCall(0);
+                var val2 = lua.ToCLR();
+                Assert.AreEqual("42", val2);
+                lua.Pop();
 
                 lua.LeaveArea();
             }

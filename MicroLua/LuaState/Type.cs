@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace MicroLua {
     public partial class LuaState {
@@ -22,6 +23,15 @@ namespace MicroLua {
                 PushBool(true);
                 PushLuaCClosure(_ClrObjectNewIndex, 2);
                 SetField("__newindex");
+
+                PushLuaReference(_MicroLuaMakeCallWrapperRef);
+                _PushCLRReference(SelfRef);
+                PushCLR(new LuaCLRMethodInfo(null, ".ctor"));
+                // type will be filled in by _ConstructorInvoke
+                PushInt((int)(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
+                PushLuaCClosure(_ConstructorInvoke, 3);
+                ProtCall(1, results: 1);
+                SetField("__call");
 
                 _PushCLRReference(SelfRef);
                 PushLuaCClosure(_ClrObjectToString, 1);

@@ -35,11 +35,11 @@ namespace MicroLua {
         public LuaState() {
             Pointer = Lua.luaL_newstate();
             SelfRef = _MakeCLRReference(this);
+            Lua.luaL_openlibs(Pointer);
+            _SetupLuaReftable();
+            _LoadErrorMechanism();
             _ConstructCLRObjectMetatable();
             _ConstructTypeObjectMetatable();
-            _SetupLuaReftable();
-            Lua.luaL_openlibs(Pointer);
-            _LoadErrorMechanism();
             // this ref will not be GC'd if the lua object is collected
             // because _MakeRef/_PushRef don't assign the metatable
         }

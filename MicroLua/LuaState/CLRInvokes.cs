@@ -167,7 +167,6 @@ namespace MicroLua {
 
             var binding_flags = (BindingFlags)(int)Lua.lua_tointeger(L, Lua.lua_upvalueindex(3));
 
-
             object target = null;
             var params_offset = 0;
             if ((binding_flags & BindingFlags.Static) == 0) {
@@ -193,6 +192,56 @@ namespace MicroLua {
             object result = null;
             try {
                 result = method.Invoke(target, binding_flags, params_ary);
+            } catch (Exception e) {
+                state.PushBool(false);
+                //state.Push($"[{e.GetType()}] {e.Message}");
+                state.PushCLR(e);
+                return 2;
+            }
+            // ErrorMechanism.lua protocol:
+            //   return 2 values
+            //   1 - flag (true - success, false - failure)
+            //   2 - error string or return value
+
+            state.PushBool(true);
+            state.Push(result);
+            return 2;
+        }
+
+        private static int _ConstructorInvoke(IntPtr L) {
+            // upvalues:
+            //   1 - LuaState
+            //   2 - LuaCLRMethodInfo
+            //   3 - binding_flags (as int)
+            // args:
+            //   1 - type
+            //   ... - params
+            var state = Refs.GetRef<LuaState>(
+                _GetCLRReference(L, Lua.lua_upvalueindex(1))
+            );
+
+            var method = Refs.GetRef<LuaCLRMethodInfo>(
+                _GetCLRReference(L, Lua.lua_upvalueindex(2))
+            );
+
+            var binding_flags = (BindingFlags)(int)Lua.lua_tointeger(L, Lua.lua_upvalueindex(3));
+
+            Type type = Refs.GetRef<Type>(_GetCLRReference(L, 1));
+            var params_offset = 1;
+
+            var params_len = Lua.lua_gettop(L) - params_offset;
+            var params_ary = new object[params_len];
+            var params_begin = 1 + params_offset;
+            for (int i = params_begin; i <= params_len + params_offset; i++) {
+                var param = ConvertToCLR(L, i);
+                params_ary[i - (params_begin)] = param;
+            }
+
+            method.Type = type;
+
+            object result = null;
+            try {
+                result = method.Invoke(null, binding_flags, params_ary);
             } catch (Exception e) {
                 state.PushBool(false);
                 //state.Push($"[{e.GetType()}] {e.Message}");
