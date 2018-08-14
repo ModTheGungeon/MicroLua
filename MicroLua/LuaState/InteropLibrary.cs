@@ -39,12 +39,13 @@ namespace MicroLua {
             var types = asm.GetTypes();
             for (int i = 0; i < types.Length; i++) {
                 var type = types[i];
-                if (type.Namespace.StartsWith($"{@namespace}.")) {
+                var type_namespace = type.Namespace;
+                if (type_namespace == null) type_namespace = "-.";
+                if (type_namespace.StartsWith($"{@namespace}.", StringComparison.InvariantCulture)) {
                     state.PushCLR(type);
                     state.SetField(type.Name);
                 }
             }
-            state.PushCLR(asm.GetType(@namespace));
             return 1;
         }
 
