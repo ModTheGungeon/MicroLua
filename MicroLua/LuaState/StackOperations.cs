@@ -35,6 +35,10 @@ namespace MicroLua{
             return Lua.lua_type(Pointer, n);
         }
 
+        public void PushValue(int index) {
+            Lua.lua_pushvalue(Pointer, index);
+        }
+
         public void PushInt(int n) {
             Lua.lua_pushinteger(Pointer, new IntPtr(n));
         }
