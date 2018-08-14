@@ -16,7 +16,7 @@ namespace MicroLua {
             Lua.lua_getglobal(Pointer, name);
         }
 
-        public void GetField(int index = -1) {
+        public void GetField(int index = -2) {
             Lua.lua_gettable(Pointer, index);
         }
 
