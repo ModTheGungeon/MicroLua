@@ -32,6 +32,14 @@ namespace MicroLua {
             Lua.lua_settable(Pointer, index);
         }
 
+        public bool SetMetatable(int index = -2) {
+            return Lua.lua_setmetatable(Pointer, index) == 1;
+        }
+
+        public bool GetMetatable(int index = -1) {
+            return Lua.lua_getmetatable(Pointer, index) == 1;
+        }
+
         public void StartIter() {
             Lua.lua_pushnil(Pointer);
         }
