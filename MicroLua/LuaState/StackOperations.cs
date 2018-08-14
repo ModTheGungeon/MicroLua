@@ -18,6 +18,10 @@ namespace MicroLua{
             set { Lua.lua_settop(Pointer, value); }
         }
 
+        public bool AreEqual(int index1, int index2) {
+            return Lua.lua_equal(Pointer, index1, index2) == 1;
+        }
+
         public void Insert(int index) {
             Lua.lua_insert(Pointer, index);
         }

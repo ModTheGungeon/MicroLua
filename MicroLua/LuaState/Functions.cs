@@ -112,6 +112,16 @@ namespace MicroLua {
             return result;
         }
 
+        public bool SetEnvironment(int index = -2) {
+            return Lua.lua_setfenv(Pointer, index);
+        }
+
+        public void GetEnvironment(int index = -1) {
+            Lua.lua_getfenv(Pointer, index);
+        }
+
+        // Obsolete
+
         [Obsolete("Use BeginProtCall/ExecProtCall")]
         public LuaResult ProtCall(int args, int results = Lua.LUA_MULTRET) {
             _CheckStackMin(1 + args);

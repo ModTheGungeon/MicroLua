@@ -97,9 +97,6 @@ namespace MicroLua {
         public static extern lua_Alloc lua_getallocf(IntPtr L, IntPtr ud);
 
         [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
-        public static extern void lua_getfenv(IntPtr L, int index);
-
-        [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
         public static extern void lua_getfield(IntPtr L, int index, [MarshalAs(UnmanagedType.LPStr)] string k);
 
         public static void lua_getglobal(IntPtr L, string name) {
@@ -312,5 +309,11 @@ namespace MicroLua {
 
         [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
         public static extern void lua_rawseti(IntPtr L, int index, int n);
+
+        [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
+        public static extern bool lua_setfenv(IntPtr L, int index);
+
+        [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
+        public static extern void lua_getfenv(IntPtr L, int index);
     }
 }

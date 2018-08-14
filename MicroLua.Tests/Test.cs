@@ -506,5 +506,36 @@ namespace MicroLua.Tests {
                 lua.LeaveArea();
             }
         }
+
+        [Test]
+        public void Environments() {
+            using (var lua = new LuaState()) {
+                lua.EnterArea();
+
+                lua.BeginProtCall();
+                lua.LoadString("return hello");
+                var func_ref = lua.MakeLuaReference();
+
+                lua.PushNewTable();
+                lua.PushString("Hello, world!");
+                lua.SetField("hello");
+                var env_ref = lua.MakeLuaReference();
+
+                lua.SetEnvironment();
+
+                lua.ExecProtCall(0);
+                var val = lua.ToCLR();
+                lua.Pop();
+                Assert.AreEqual("Hello, world!", val);
+
+                lua.PushLuaReference(func_ref);
+                lua.GetEnvironment();
+                lua.PushLuaReference(env_ref);
+                Assert.IsTrue(lua.AreEqual(-1, -2));
+                lua.Pop(3);
+
+                lua.LeaveArea();
+            }
+        }
     }
 }

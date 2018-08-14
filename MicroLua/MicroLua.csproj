@@ -48,7 +48,7 @@
     <Compile Include="LuaState\TableOperations.cs" />
     <Compile Include="LuaState\References.cs" />
     <Compile Include="LuaState\GCOperations.cs" />
-    <Compile Include="LuaState\FunctionCalling.cs" />
+    <Compile Include="LuaState\Functions.cs" />
     <Compile Include="LuaState\InteropLibrary.cs" />
     <Compile Include="LuaState\LuaCLRConversions.cs" />
   </ItemGroup>
