@@ -117,6 +117,9 @@ namespace MicroLua {
         public static extern void lua_gettable(IntPtr L, int index);
 
         [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
+        public static extern void lua_settable(IntPtr L, int index);
+
+        [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]
         public static extern int lua_gettop(IntPtr L);
 
         [DllImport(DLL_NAME, CallingConvention = CALLING_CONVENTION)]

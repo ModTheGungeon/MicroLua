@@ -16,12 +16,20 @@ namespace MicroLua {
             Lua.lua_getglobal(Pointer, name);
         }
 
+        public void GetField(int index = -1) {
+            Lua.lua_gettable(Pointer, index);
+        }
+
         public void SetField(string name, int index = -2) {
             Lua.lua_setfield(Pointer, index, name);
         }
 
         public void SetGlobal(string name) {
             Lua.lua_setglobal(Pointer, name);
+        }
+
+        public void SetField(int index = -3) {
+            Lua.lua_settable(Pointer, index);
         }
 
         public void StartIter() {
