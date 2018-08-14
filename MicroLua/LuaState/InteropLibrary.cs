@@ -40,8 +40,8 @@ namespace MicroLua {
             for (int i = 0; i < types.Length; i++) {
                 var type = types[i];
                 var type_namespace = type.Namespace;
-                if (type_namespace == null) type_namespace = "-.";
-                if (type_namespace.StartsWith($"{@namespace}.", StringComparison.InvariantCulture)) {
+                if (type_namespace == null) type_namespace = "-";
+                if (type_namespace == @namespace) {
                     state.PushCLR(type);
                     state.SetField(type.Name);
                 }
