@@ -51,6 +51,7 @@
     <Compile Include="LuaState\Functions.cs" />
     <Compile Include="LuaState\InteropLibrary.cs" />
     <Compile Include="LuaState\LuaCLRConversions.cs" />
+    <Compile Include="LuaState\Type.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ErrorMechanism.lua">

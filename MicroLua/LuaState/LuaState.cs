@@ -10,6 +10,7 @@ namespace MicroLua {
         public static RefTable Refs = new RefTable();
 
         public const string CLR_OBJECT_METATABLE_NAME = "MICROLUA_CLROBJECT";
+        public const string TYPE_OBJECT_METATABLE_NAME = "MICROLUA_TYPEOBJECT";
         public const string LUA_REFTABLE_KEY = "MICROLUA_REFERENCES";
 
         public void Dispose() {
@@ -35,6 +36,7 @@ namespace MicroLua {
             Pointer = Lua.luaL_newstate();
             SelfRef = _MakeCLRReference(this);
             _ConstructCLRObjectMetatable();
+            _ConstructTypeObjectMetatable();
             _SetupLuaReftable();
             Lua.luaL_openlibs(Pointer);
             _LoadErrorMechanism();

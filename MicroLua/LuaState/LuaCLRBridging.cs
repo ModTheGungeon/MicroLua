@@ -23,11 +23,13 @@ namespace MicroLua {
                 SetField("__gc");
 
                 _PushCLRReference(SelfRef);
-                PushLuaCClosure(_ClrObjectIndex, 1);
+                PushBool(false);
+                PushLuaCClosure(_ClrObjectIndex, 2);
                 SetField("__index");
 
                 _PushCLRReference(SelfRef);
-                PushLuaCClosure(_ClrObjectNewIndex, 1);
+                PushBool(false);
+                PushLuaCClosure(_ClrObjectNewIndex, 2);
                 SetField("__newindex");
 
                 _PushCLRReference(SelfRef);

@@ -10,9 +10,9 @@ namespace MicroLua {
         }
 
         private static object[] _EmptyObjectArray = new object[] { };
-        private static bool _TypeHasMethod(Type type, string name) {
+        private static bool _TypeHasMethod(Type type, BindingFlags binding_flags, string name) {
             try {
-                return type.GetMethod(name) != null;
+                return type.GetMethod(name, binding_flags) != null;
             } catch (AmbiguousMatchException) {
                 // I don't like this, this is ugly
                 return true;
@@ -37,25 +37,39 @@ namespace MicroLua {
         private static int _ClrObjectIndex(IntPtr L) {
             // upvalues:
             //   1 - LuaState
+            //   2 - static (true/false)
+            //       if true, self is Type
             // args:
             //   1 - self
             //   2 - key
             var state = Refs.GetRef<LuaState>(
                 _GetCLRReference(L, Lua.lua_upvalueindex(1))
             );
+
+            var @static = state.ToBool(Lua.lua_upvalueindex(2));
+
             var self = Refs.GetRef(_GetCLRReference(L, 1));
-            var type = self.GetType();
+            var binding_flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+            Type type;
+            if (@static) {
+                type = self as Type;
+                self = null;
+                binding_flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+            } else {
+                type = self.GetType();
+            }
             var key = state.ToString(2);
 
             // try field first
-            var field = type.GetField(key);
+            var field = type.GetField(key, binding_flags);
             if (field != null) {
                 var value = field.GetValue(self);
                 state.Push(value);
                 return 1;
             }
             // then property
-            var prop = type.GetProperty(key);
+            var prop = type.GetProperty(key, binding_flags);
             if (prop != null) {
                 var get = prop.GetGetMethod();
                 if (get != null) {
@@ -68,10 +82,10 @@ namespace MicroLua {
                 }
             }
             // and now, method
-            if (_TypeHasMethod(type, key)) {
+            if (_TypeHasMethod(type, binding_flags, key)) {
                 // for now we allow access of all methods, including private                
                 // need to figure out how to handle that
-                state.PushLuaCLRMethod(type, key, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                state.PushLuaCLRMethod(type, key, binding_flags);
                 return 1;
             }
 
@@ -83,6 +97,8 @@ namespace MicroLua {
         private static int _ClrObjectNewIndex(IntPtr L) {
             // upvalues:
             //   1 - LuaState
+            //   2 - static (true/false)
+            //       if true, self is Type
             // args:
             //   1 - self
             //   2 - key
@@ -91,19 +107,29 @@ namespace MicroLua {
             var state = Refs.GetRef<LuaState>(
                 _GetCLRReference(L, Lua.lua_upvalueindex(1))
             );
+            var @static = state.ToBool(Lua.lua_upvalueindex(2));
             var self = Refs.GetRef(_GetCLRReference(L, 1));
-            var type = self.GetType();
+            var binding_flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+            Type type;
+            if (@static) {
+                type = self as Type;
+                self = null;
+                binding_flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+            } else {
+                type = self.GetType();
+            }
             var key = state.ToString(2);
             var target_value = state.ToCLR(3);
 
             // try field first
-            var field = type.GetField(key);
+            var field = type.GetField(key, binding_flags);
             if (field != null) {
                 field.SetValue(self, target_value);
                 return 0;
             }
             // then property
-            var prop = type.GetProperty(key);
+            var prop = type.GetProperty(key, binding_flags);
             if (prop != null) {
                 var set = prop.GetSetMethod();
                 if (set != null) {
@@ -118,19 +144,19 @@ namespace MicroLua {
             // but in the future we could somehow use this for
             // native patching?
 
-            // TODO: don't use lua_error
+                 // TODO: don't use lua_error
             state.PushString($"Field/property '{key}' does not exist");
             return Lua.lua_error(L);
         }
 
         private static int _MethodInvoke(IntPtr L) {
-            // args:
-            //   1 - self/target
-            //   ... - params
             // upvalues:
             //   1 - LuaState
             //   2 - LuaCLRMethodInfo
             //   3 - binding_flags (as int)
+            // args:
+            //   1 - self/target
+            //   ... - params
             var state = Refs.GetRef<LuaState>(
                 _GetCLRReference(L, Lua.lua_upvalueindex(1))
             );
@@ -184,11 +210,11 @@ namespace MicroLua {
         }
 
         private static int _LuaCLRFunctionInvoke(IntPtr L) {
-            // args:
-            //   ... - params
             // upvalues:
             //   1 - LuaState
             //   2 - LuaCLRFunction
+            // args:
+            //   ... - params
             var state = Refs.GetRef<LuaState>(
                 _GetCLRReference(L, Lua.lua_upvalueindex(1))
             );
@@ -196,7 +222,6 @@ namespace MicroLua {
             var func = Refs.GetRef<LuaCLRFunction>(
                 _GetCLRReference(L, Lua.lua_upvalueindex(2))
             );
-
 
             var params_len = Lua.lua_gettop(L);
             var params_ary = new object[params_len];
@@ -206,9 +231,10 @@ namespace MicroLua {
                 params_ary[i - (params_begin)] = param;
             }
 
-            object result = null;
+            var top = Lua.lua_gettop(L);
+            int results = 0;
             try {
-                result = func.Invoke(state);
+                results = func.Invoke(state);
             } catch (Exception e) {
                 state.PushBool(false);
                 //state.Push($"[{e.GetType()}] {e.Message}");
@@ -221,8 +247,9 @@ namespace MicroLua {
             //   2 - error string or return value
 
             state.PushBool(true);
-            state.Push(result);
-            return 2;
+            state.Insert(top + 1);
+
+            return 1 + results;
         }
     }
 }

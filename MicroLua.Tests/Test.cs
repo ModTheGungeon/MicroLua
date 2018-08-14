@@ -37,6 +37,12 @@ namespace MicroLua.Tests {
             set { _TestProp = value; }
         }
 
+        public static string StaticTestField = "TEST";
+        private static string _StaticTestProp = "TEST";
+        public static string StaticTestProp {
+            get { return _StaticTestProp; }
+            set { _StaticTestProp = value; }
+        }
     }
 
     [TestFixture]
@@ -388,7 +394,7 @@ namespace MicroLua.Tests {
         // similarly to lua_CFunction, *but* it comes with
         // built in proper error handling (which means you
         // can safely throw inside here)
-        public static object TestFunction(LuaState lua) {
+        public static int TestFunction(LuaState lua) {
             lua.CheckArg(LuaType.String, 1);
             lua.CheckArg(LuaType.Number, 2);
             lua.CheckArg(LuaType.Boolean, 3);
@@ -401,7 +407,8 @@ namespace MicroLua.Tests {
                 throw new InvalidOperationException("Wrong password!");
             }
 
-            return "Hello, world!";
+            lua.PushString("Hello, world!");
+            return 1;
         }
 
         [Test]
@@ -412,23 +419,21 @@ namespace MicroLua.Tests {
                 lua.PushLuaCLRFunction(TestFunction);
                 lua.SetGlobal("test");
 
+                lua.BeginProtCall();
                 lua.LoadString("return test('not hello', 0, true)");
-                if (lua.ProtCall(0) != LuaResult.OK) {
-                    var ex = lua.ToCLR<Exception>();
-                    lua.Pop();
+                try {
+                    lua.ExecProtCall(0);
+                } catch (Exception ex) {
                     Assert.NotNull(ex);
-                    Assert.IsInstanceOf(typeof(InvalidOperationException), ex);
-                    Assert.AreEqual("Wrong password!", ex.Message);
+                    Assert.IsInstanceOf(typeof(LuaException), ex);
+                    Assert.NotNull(ex.InnerException);
+                    Assert.IsInstanceOf(typeof(InvalidOperationException), ex.InnerException);
+                    Assert.AreEqual("Wrong password!", ex.InnerException.Message);
                 }
 
+                lua.BeginProtCall();
                 lua.LoadString("return test('hello', 1000, false)");
-                if (lua.ProtCall(0) != LuaResult.OK) {
-                    Assert.Fail(lua.ToCLR().ToString());
-                    // no need to pop error becuase we fail the test anyway
-                    // in real code you should, though, because you're
-                    // probably not going to terminate the whole program
-                    // in the case of a lua error
-                }
+                lua.ExecProtCall(0);
 
                 var obj = lua.ToCLR();
                 lua.Pop();
@@ -533,6 +538,44 @@ namespace MicroLua.Tests {
                 lua.PushLuaReference(env_ref);
                 Assert.IsTrue(lua.AreEqual(-1, -2));
                 lua.Pop(3);
+
+                lua.LeaveArea();
+            }
+        }
+
+        [Test]
+        public void StaticType() {
+            using (var lua = new LuaState()) {
+                lua.EnterArea();
+
+                lua.PushType(typeof(Helper));
+                lua.SetGlobal("Helper");
+
+                lua.BeginProtCall();
+                lua.LoadString("return Helper.Overload('hello')");
+                lua.ExecProtCall(0);
+                Assert.AreEqual("hello", lua.ToString());
+                lua.Pop();
+
+                lua.LoadString("return Helper.StaticTestField");
+                lua.ProtCall(0);
+                var test_field = lua.ToCLR();
+                Assert.AreEqual(Helper.StaticTestField, test_field);
+                lua.Pop();
+
+                lua.LoadString("return Helper.StaticTestProp");
+                lua.ProtCall(0);
+                var test_prop = lua.ToCLR();
+                Assert.AreEqual(Helper.StaticTestProp, test_prop);
+                lua.Pop();
+
+                lua.LoadString("Helper.StaticTestField = 'hacked'");
+                lua.VoidProtCall(0);
+                Assert.AreEqual("hacked", Helper.StaticTestField);
+
+                lua.LoadString("Helper.StaticTestProp = 'hacked'");
+                lua.VoidProtCall(0);
+                Assert.AreEqual("hacked", Helper.StaticTestProp);
 
                 lua.LeaveArea();
             }

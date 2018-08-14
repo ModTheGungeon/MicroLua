@@ -2,7 +2,7 @@
 using System.Reflection;
 
 namespace MicroLua {
-    public delegate object LuaCLRFunction(LuaState state);
+    public delegate int LuaCLRFunction(LuaState state);
 
     public class LuaCLRMethodInfo {
         public Type Type { get; private set; }
