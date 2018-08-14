@@ -67,7 +67,7 @@ namespace MicroLua {
             _PushPcallErrorHandler();
         }
 
-        public LuaResult ExecProtCall(int args, int results = Lua.LUA_MULTRET) {
+        public LuaResult ExecProtCall(int args, int results = Lua.LUA_MULTRET, bool cleanup = false) {
             _CheckStackMin(1 + args + 1);
             var top = StackTop;
 
@@ -80,6 +80,8 @@ namespace MicroLua {
             if (result != LuaResult.OK) {
                 var err = ToCLR();
                 Pop();
+                if (cleanup) LeaveAreaCleanup();
+
                 if (err is Exception) {
                     throw (Exception)err;
                 }
@@ -94,14 +96,14 @@ namespace MicroLua {
             return result;
         }
 
-        public LuaResult ExecProtCallVoid(int args) {
+        public LuaResult ExecProtCallVoid(int args, bool cleanup = false) {
             _CheckStackMin(1 + args + 1);
             // function will be popped and then the first result
             // will be pushed in its place
             // current stack top points at the function so we
             // have to go 1 back
             var top = Lua.lua_gettop(Pointer) - 1;
-            var result = ExecProtCall(args, Lua.LUA_MULTRET);
+            var result = ExecProtCall(args, Lua.LUA_MULTRET, cleanup);
 
             // if an error happens, we won't even get to this line
             // but that's okay, because we don't need to clean up
