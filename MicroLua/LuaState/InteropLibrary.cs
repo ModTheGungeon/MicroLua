@@ -42,7 +42,7 @@ namespace MicroLua {
                 var type_namespace = type.Namespace;
                 if (type_namespace == null) type_namespace = "-";
                 if (type_namespace == @namespace) {
-                    state.PushCLR(type);
+                    state.PushType(type);
                     state.SetField(type.Name);
                 }
             }
