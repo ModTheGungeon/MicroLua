@@ -77,9 +77,40 @@ namespace MicroLua {
             var results_end = StackTop;
             var results_len = results_end - results_start;
             Lua.lua_remove(Pointer, StackTop - results_len); // pop errhandler
+            if (result != LuaResult.OK) {
+                var err = ToCLR();
+                Pop();
+                if (err is Exception) {
+                    throw (Exception)err;
+                }
+
+                // in case err handler wasn't run
+                // (err handler should make it so that
+                // all errors are always exceptions,
+                // but with certain types of errors it
+                // may not be run)
+                throw new LuaException("An error occured while executing a Lua function", null, value: err);
+            }
             return result;
         }
 
+        public LuaResult ExecProtCallVoid(int args) {
+            _CheckStackMin(1 + args + 1);
+            // function will be popped and then the first result
+            // will be pushed in its place
+            // current stack top points at the function so we
+            // have to go 1 back
+            var top = Lua.lua_gettop(Pointer) - 1;
+            var result = ExecProtCall(args, Lua.LUA_MULTRET);
+
+            // if an error happens, we won't even get to this line
+            // but that's okay, because we don't need to clean up
+            // the error, ExecProtCall does that
+            Lua.lua_settop(Pointer, top);
+            return result;
+        }
+
+        [Obsolete("Use BeginProtCall/ExecProtCall")]
         public LuaResult ProtCall(int args, int results = Lua.LUA_MULTRET) {
             _CheckStackMin(1 + args);
             var top = StackTop;
@@ -88,7 +119,7 @@ namespace MicroLua {
             return result;
         }
 
-
+        [Obsolete("Use BeginProtCall/ExecProtCallVoid")]
         public LuaResult VoidProtCall(int args) {
             _CheckStackMin(1 + args);
             // function will be popped and then the first result

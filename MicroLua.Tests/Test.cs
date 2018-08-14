@@ -487,10 +487,8 @@ namespace MicroLua.Tests {
                     return testf
                 ");
                 lua.ExecProtCall(0);
-                if (lua.ExecProtCall(0) != LuaResult.OK) {
-                    var ex = lua.ToCLR() as LuaException;
-                    lua.Pop();
-
+                try { lua.ExecProtCall(0); }
+                catch (LuaException ex) {
                     Assert.NotNull(ex);
                     Assert.NotNull(ex.InnerException);
                     Assert.NotNull(ex.InnerException.InnerException);
