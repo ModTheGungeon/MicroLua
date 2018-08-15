@@ -7,13 +7,17 @@ namespace MicroLua {
         //*** LUA<->CLR BRIDGING ***//
         //////////////////////////////
 
-        public bool IsCLRObject(int index = -1) {
-            if (Type(index) != LuaType.Userdata) return false;
-            if (Lua.lua_getmetatable(Pointer, index) == 0) return false;
-            Lua.luaL_getmetatable(Pointer, CLR_OBJECT_METATABLE_NAME);
-            var eq = Lua.lua_rawequal(Pointer, -1, -2);
-            Lua.lua_pop(Pointer, 2);
+        public static bool IsCLRObject(IntPtr L, int index = -1) {
+            if (Lua.lua_type(L, index) != LuaType.Userdata) return false;
+            if (Lua.lua_getmetatable(L, index) == 0) return false;
+            Lua.luaL_getmetatable(L, CLR_OBJECT_METATABLE_NAME);
+            var eq = Lua.lua_rawequal(L, -1, -2);
+            Lua.lua_pop(L, 2);
             return eq;
+        }
+
+        public bool IsCLRObject(int index = -1) {
+            return IsCLRObject(Pointer, index);
         }
 
         private void _ConstructCLRObjectMetatable() {
@@ -86,6 +90,8 @@ namespace MicroLua {
                     return ToUserdata(index);
                 }
                 return Refs.GetRef(refidx);
+            case LuaType.Function: return "[function]";
+            case LuaType.Table: return "[table]";
             default: throw new LuaException($"Unsupported Lua->CLR conversion for type {type}");
             }
         }

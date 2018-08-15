@@ -75,11 +75,13 @@ namespace MicroLua {
                 s.Append(": ").AppendLine(curex.Message);
             }
 
-            s.AppendLine();
-            s.AppendLine("-- Lua traceback");
+            if (TracebackArray != null) {
+                s.AppendLine();
+                s.AppendLine("-- Lua traceback");
 
-            for (int i = 0; i < TracebackArray.Length; i++) {
-                s.Append("  ").AppendLine(TracebackArray[i]);
+                for (int i = 0; i < TracebackArray.Length; i++) {
+                    s.Append("  ").AppendLine(TracebackArray[i]);
+                }
             }
 
             for (int i = 0; i < exceptions.Count; i++) {

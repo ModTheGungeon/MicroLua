@@ -14,7 +14,9 @@ namespace MicroLua {
             case LuaType.String: return typeof(string);
             case LuaType.Table: return _GetTableCLRType(L, index);
             case LuaType.LightUserdata: return typeof(IntPtr);
-            case LuaType.Userdata: return typeof(IntPtr);
+            case LuaType.Userdata:
+                if (IsCLRObject(L, index)) return typeof(object);
+                return typeof(IntPtr);
             default: throw new LuaException($"Can't match Lua type {lua_type} to a CLR type");
             }
         }
@@ -37,7 +39,11 @@ namespace MicroLua {
             case LuaType.String: return ToString(L, index);
             case LuaType.Table: return _TableToCLR(L, index);
             case LuaType.LightUserdata: return Lua.lua_touserdata(L, index);
-            case LuaType.Userdata: return Lua.lua_touserdata(L, index);
+            case LuaType.Userdata:
+                if (IsCLRObject(L, index)) {
+                    return Refs.GetRef(_GetCLRReference(L, index));
+                }
+                return Lua.lua_touserdata(L, index);
             default: throw new LuaException($"Can't match Lua type {lua_type} to a CLR type");
             }
         }

@@ -71,12 +71,10 @@ namespace MicroLua {
             _CheckStackMin(1 + args + 1);
             var top = StackTop;
 
-            var results_start = StackTop - 1;
+            var errh = top - args - 1;
+            var result = Lua.lua_pcall(Pointer, args, results, errh);
 
-            var result = Lua.lua_pcall(Pointer, args, results, top - args - 1);
-            var results_end = StackTop;
-            var results_len = results_end - results_start;
-            Lua.lua_remove(Pointer, StackTop - results_len); // pop errhandler
+            Lua.lua_remove(Pointer, errh); // pop errhandler
             if (result != LuaResult.OK) {
                 var err = ToCLR();
                 Pop();

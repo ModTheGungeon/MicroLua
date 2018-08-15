@@ -2,6 +2,21 @@
 using System;
 using System.Reflection;
 
+namespace MicroLua.Tests.TestNamespace {
+    public class A {
+        public static bool X = false;
+        public void DoThing(C c) {
+            X = true;
+        }
+    }
+
+    public class B {
+        public static A AInstance = new A();
+    }
+
+    public class C { }
+}
+
 namespace MicroLua.Tests {
     public class Helper {
         public static Helper Instance = new Helper();
@@ -502,8 +517,7 @@ namespace MicroLua.Tests {
                     return testf
                 ");
                 lua.ExecProtCall(0);
-                try { lua.ExecProtCall(0); }
-                catch (LuaException ex) {
+                try { lua.ExecProtCall(0); } catch (LuaException ex) {
                     Assert.NotNull(ex);
                     Assert.NotNull(ex.InnerException);
                     Assert.NotNull(ex.InnerException.InnerException);
@@ -598,6 +612,25 @@ namespace MicroLua.Tests {
                 var val2 = lua.ToCLR();
                 Assert.AreEqual("42", val2);
                 lua.Pop();
+
+                lua.LeaveArea();
+            }
+        }
+
+        [Test]
+        public void StaticType2() {
+            using (var lua = new LuaState()) {
+                lua.EnterArea();
+                lua.LoadInteropLibrary();
+
+                lua.BeginProtCall();
+                lua.LoadString(@"
+                    local asm = interop.assembly('MicroLua.Tests')
+                    local test = interop.namespace(asm, 'MicroLua.Tests.TestNamespace')
+                    local c = test.C()
+                    test.B.AInstance:DoThing(c)
+                ");
+                lua.ExecProtCall(0);
 
                 lua.LeaveArea();
             }
