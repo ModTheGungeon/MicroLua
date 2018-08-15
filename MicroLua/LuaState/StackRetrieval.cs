@@ -47,7 +47,7 @@ namespace MicroLua {
             if (ptr == IntPtr.Zero) {
                 return null;
             }
-            var str = Marshal.PtrToStringAuto(ptr, (int)len);
+            var str = Marshal.PtrToStringAnsi(ptr, (int)len);
 
             return str;
         }
