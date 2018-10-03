@@ -49,6 +49,24 @@ namespace MicroLua {
             return 1;
         }
 
+        private static int _InteropGeneric(LuaState state) {
+            // args:
+            //   ...: generic params
+
+            var param_count = state.StackTop;
+            var @params = new Type[param_count];
+
+            for (int i = 1; i <= param_count; i++) {
+                var type = state.CheckArg<Type>(i);
+                @params[i - 1] = type;
+            }
+
+            var param_list = new LuaGenericParams(@params);
+
+            state.PushCLR(param_list);
+            return 1;
+        }
+
         public void LoadInteropLibrary() {
             EnterArea();
             PushNewTable();
@@ -62,8 +80,12 @@ namespace MicroLua {
             PushLuaCLRFunction(_InteropNamespace);
             SetField("namespace");
 
+            PushLuaCLRFunction(_InteropGeneric);
+            SetField("generic");
+
             SetGlobal("interop");
             LeaveAreaCleanup();
         }
+
     }
 }

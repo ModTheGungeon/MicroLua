@@ -11,9 +11,11 @@ namespace MicroLua {
             if (Lua.lua_type(L, index) != LuaType.Userdata) return false;
             if (Lua.lua_getmetatable(L, index) == 0) return false;
             Lua.luaL_getmetatable(L, CLR_OBJECT_METATABLE_NAME);
-            var eq = Lua.lua_rawequal(L, -1, -2);
-            Lua.lua_pop(L, 2);
-            return eq;
+            var eq_clr = Lua.lua_rawequal(L, -1, -2);
+            Lua.luaL_getmetatable(L, TYPE_OBJECT_METATABLE_NAME);
+            var eq_type = Lua.lua_rawequal(L, -1, -3);
+            Lua.lua_pop(L, 3);
+            return eq_clr || eq_type;
         }
 
         public bool IsCLRObject(int index = -1) {

@@ -105,7 +105,7 @@ namespace MicroLua{
         }
 
         // To be used only within a proper error handled context
-        // (LuaCLRFunctions and LuaCLRMethods)
+        // (LuaCLRFunctions and LuaCLR*Proxies)
 
         public void CheckArg(LuaType type, int index = -1) {
             if (Type(index) != type) {
@@ -115,6 +115,7 @@ namespace MicroLua{
 
 
         public object CheckArg(Type type, int index = -1) {
+
             if (Type(index) != LuaType.Userdata) {
                 throw new LuaException($"Argument #{index}: expected {type} userdata, got {Type(index)}");
             }
@@ -127,6 +128,7 @@ namespace MicroLua{
                 }
                 return obj;
             }
+
             return null;
         }
 

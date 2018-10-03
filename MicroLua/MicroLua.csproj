@@ -37,7 +37,7 @@
     <Compile Include="LuaBinding.cs" />
     <Compile Include="RefTable.cs" />
     <Compile Include="Lua.cs" />
-    <Compile Include="LuaCLRMethod.cs" />
+    <Compile Include="LuaCLRInvokeProxy.cs" />
     <Compile Include="LuaState\LuaState.cs" />
     <Compile Include="LuaState\CLRInvokes.cs" />
     <Compile Include="LuaState\ScriptLoading.cs" />
@@ -52,6 +52,8 @@
     <Compile Include="LuaState\InteropLibrary.cs" />
     <Compile Include="LuaState\LuaCLRConversions.cs" />
     <Compile Include="LuaState\Type.cs" />
+    <Compile Include="LuaGenericParams.cs" />
+    <Compile Include="GetMethodExt.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ErrorMechanism.lua">

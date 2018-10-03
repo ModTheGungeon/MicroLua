@@ -68,6 +68,14 @@ namespace MicroLua.Tests {
             get { return _StaticTestProp; }
             set { _StaticTestProp = value; }
         }
+
+        public string GenericMethod<T>(int a, int b) {
+            return $"{typeof(T).FullName} | {a} + {b} = {a + b}";
+        }
+
+        public string GenericMethod(int a, int b) {
+            return $"{a} + {b} = {a + b}";
+        }
     }
 
     [TestFixture]
@@ -635,5 +643,65 @@ namespace MicroLua.Tests {
                 lua.LeaveArea();
             }
         }
+
+        [Test]
+        public void Generics() {
+            using (var lua = new LuaState()) {
+                lua.EnterArea();
+                lua.LoadInteropLibrary();
+
+                lua.PushCLR(new Helper());
+                lua.SetGlobal("helper");
+
+                lua.BeginProtCall();
+                lua.LoadString(@"
+                    GENERIC = interop.generic
+                    Assembly_MicroLua_Tests = interop.assembly('MicroLua.Tests')
+                    MicroLua = { Tests = {
+                        Helper = interop.type(Assembly_MicroLua_Tests, 'MicroLua.Tests.Helper')
+                    } }
+                "); // some small shortcuts
+                lua.ExecProtCall(0);
+
+                try {
+                    lua.BeginProtCall();
+                    lua.LoadString(@"
+                        return helper:GenericMethod(
+                            interop.generic(MicroLua.Tests.Helper, MicroLua.Tests.Helper),
+                            1, 2
+                        )
+                    ");
+                    lua.ExecProtCall(0);
+                } catch (LuaException e) {
+                    Assert.AreEqual("Incorrect length of generic parameters for method GenericMethod.", e.InnerException?.Message);
+                }
+
+                lua.BeginProtCall();
+                lua.LoadString(@"
+                    return helper:GenericMethod(
+                        interop.generic(MicroLua.Tests.Helper),
+                        1, 2
+                    )
+                ");
+                lua.ExecProtCall(0, cleanup: true);
+                var result = lua.ToCLR();
+                lua.Pop();
+                Assert.AreEqual("MicroLua.Tests.Helper | 1 + 2 = 3", result);
+
+                lua.BeginProtCall();
+                lua.LoadString(@"
+                    return helper:GenericMethod(
+                        1, 2
+                    )
+                ");
+                lua.ExecProtCall(0);
+                var nongeneric_result = lua.ToCLR();
+                lua.Pop();
+                Assert.AreEqual("1 + 2 = 3", nongeneric_result);
+
+                lua.LeaveArea();
+            }
+        }
     }
 }
+
