@@ -52,7 +52,7 @@ namespace MicroLua {
         }
 
         public void PushLuaCLRMethod(Type type, string name, BindingFlags binding_flags, object target = null) {
-            var methodinfo = new LuaCLRMethodInfo(type, name);
+            var methodinfo = new LuaCLRMethodProxy(type, name);
             PushLuaReference(_MicroLuaMakeCallWrapperRef);
 
             _PushCLRReference(SelfRef);

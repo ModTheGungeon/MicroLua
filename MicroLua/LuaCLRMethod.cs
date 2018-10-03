@@ -4,11 +4,15 @@ using System.Reflection;
 namespace MicroLua {
     public delegate int LuaCLRFunction(LuaState state);
 
-    public class LuaCLRMethodInfo {
+    public abstract class LuaCLRInvokeProxy {
+        public abstract object Invoke(object target, BindingFlags binding_flags, params object[] @params);
+    }
+
+    public class LuaCLRMethodProxy : LuaCLRInvokeProxy {
         public Type Type { get; internal set; }
         public string Name { get; internal set; }
 
-        public LuaCLRMethodInfo(Type type, string name) {
+        public LuaCLRMethodProxy(Type type, string name) {
             Type = type;
             Name = name;
         }
@@ -25,6 +29,27 @@ namespace MicroLua {
             }
         }
 
+        public override object Invoke(object target, BindingFlags binding_flags, params object[] @params) {
+            var method = _AcquireMethod(binding_flags, @params);
+            if (method == null) {
+                throw new LuaException($"Failed acquiring overload for method {Name}");
+            }
+
+            try {
+                return method.Invoke(target, @params);
+            } catch (TargetInvocationException) {
+                throw;
+            }
+        }
+    }
+
+    public class LuaCLRConstructorProxy: LuaCLRInvokeProxy {
+        public Type Type { get; internal set; }
+
+        public LuaCLRConstructorProxy(Type type) {
+            Type = type;
+        }
+
         private ConstructorInfo _AcquireConstructor(BindingFlags binding_flags, object[] @params) {
             if (@params.Length == 0) {
                 return Type.GetConstructor(binding_flags, null, Type.EmptyTypes, null);
@@ -37,7 +62,7 @@ namespace MicroLua {
             }
         }
 
-        private object _InvokeConstructor(BindingFlags binding_flags, params object[] @params) {
+        public override object Invoke(object target, BindingFlags binding_flags, params object[] @params) {
             var ctor = _AcquireConstructor(binding_flags, @params);
             if (ctor == null) {
                 throw new LuaException($"Failed acquiring overload for constructor");
@@ -45,21 +70,6 @@ namespace MicroLua {
 
             try {
                 return ctor.Invoke(@params);
-            } catch (TargetInvocationException) {
-                throw;
-            }
-        }
-
-        public object Invoke(object target, BindingFlags binding_flags, params object[] @params) {
-            if (Name == ".ctor") return _InvokeConstructor(binding_flags, @params);
-
-            var method = _AcquireMethod(binding_flags, @params);
-            if (method == null) {
-                throw new LuaException($"Failed acquiring overload for method {Name}");
-            }
-
-            try {
-                return method.Invoke(target, @params);
             } catch (TargetInvocationException) {
                 throw;
             }

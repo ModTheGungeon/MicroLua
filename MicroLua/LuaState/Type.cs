@@ -26,7 +26,7 @@ namespace MicroLua {
 
                 PushLuaReference(_MicroLuaMakeCallWrapperRef);
                 _PushCLRReference(SelfRef);
-                PushCLR(new LuaCLRMethodInfo(null, ".ctor"));
+                PushCLR(new LuaCLRConstructorProxy(null));
                 // type will be filled in by _ConstructorInvoke
                 PushInt((int)(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
                 PushLuaCClosure(_ConstructorInvoke, 3);

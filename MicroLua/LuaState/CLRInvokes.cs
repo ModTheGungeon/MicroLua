@@ -152,7 +152,7 @@ namespace MicroLua {
         private static int _MethodInvoke(IntPtr L) {
             // upvalues:
             //   1 - LuaState
-            //   2 - LuaCLRMethodInfo
+            //   2 - LuaCLRMethodProxy
             //   3 - binding_flags (as int)
             // args:
             //   1 - self/target
@@ -161,7 +161,7 @@ namespace MicroLua {
                 _GetCLRReference(L, Lua.lua_upvalueindex(1))
             );
 
-            var method = Refs.GetRef<LuaCLRMethodInfo>(
+            var method = Refs.GetRef<LuaCLRMethodProxy>(
                 _GetCLRReference(L, Lua.lua_upvalueindex(2))
             );
 
@@ -211,7 +211,7 @@ namespace MicroLua {
         private static int _ConstructorInvoke(IntPtr L) {
             // upvalues:
             //   1 - LuaState
-            //   2 - LuaCLRMethodInfo
+            //   2 - LuaCLRConstructorProxy
             //   3 - binding_flags (as int)
             // args:
             //   1 - type
@@ -220,7 +220,7 @@ namespace MicroLua {
                 _GetCLRReference(L, Lua.lua_upvalueindex(1))
             );
 
-            var method = Refs.GetRef<LuaCLRMethodInfo>(
+            var method = Refs.GetRef<LuaCLRConstructorProxy>(
                 _GetCLRReference(L, Lua.lua_upvalueindex(2))
             );
 
